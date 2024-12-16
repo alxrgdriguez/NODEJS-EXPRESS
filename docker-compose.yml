@@ -1,0 +1,59 @@
+services:
+  # Nginx
+  web:
+    container_name: nginx_express
+    image: nginx:latest
+    ports:
+      - "8098:80" # Mapea el puerto 8098 al puerto 80 del contenedor
+    volumes:
+      - ./api-nodejs:/var/www # Directorio local al contenedor
+    depends_on:
+      - php # Espera a que el contenedor PHP esté listo
+      - nodeapi # Espera a que el contenedor de Node.js esté listo
+
+  # Node.js API
+  nodeapi:
+    image: "node:latest"
+    container_name: "nodejs_express"
+    user: "node" # Configura el usuario "node" dentro del contenedor
+    working_dir: /home/node/app # Directorio de trabajo
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - .:/home/node/app # Monta el directorio actual al contenedor
+    ports:
+      - "3000:3000" # Mapea el puerto 3000 al contenedor
+    command: "npm run start" # Comando para iniciar la aplicación
+    depends_on:
+      - mongo # Espera a que MongoDB esté listo antes de ejecutarse
+
+  # PHP
+  php:
+    build:
+      context: . # El Dockerfile está en el mismo directorio
+      dockerfile: Dockerfile # Nombre del Dockerfile
+    container_name: php_express
+    volumes:
+      - ./api-php:/var/www/html # Directorio local al contenedor
+    ports:
+      - "9000:9000" # Puerto para PHP-FPM
+    environment:
+      - PHP_INI_DIR=/usr/local/etc/php
+
+  # MongoDB
+  mongo:
+    container_name: mongodb_express
+    image: mongo:latest
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root # Usuario administrador
+      MONGO_INITDB_ROOT_PASSWORD: toor # Contraseña del administrador
+    ports:
+      - "27012:27017" # Mapea el puerto 27012 al puerto 27017 del contenedor
+    volumes:
+      - mongodb_data:/data/db # Persistencia de datos
+
+# Volúmenes persistentes
+volumes:
+  mongodb_data:
+
